@@ -1,0 +1,84 @@
+version: "3.8"
+
+name: elastic_rag_stack
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.5-arm64
+    container_name: elasticsearch-local
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - elastic_rag_network
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.1.5-arm64
+    container_name: kibana-local
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - elastic_rag_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: elastic_rag_app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    environment:
+      # Override .env settings for Docker networking
+      - ELASTICSEARCH__HOST=elasticsearch
+      - ELASTICSEARCH__PORT=9200
+      - LLM__BASE_URL=http://host.docker.internal:1234/v1
+      - LMSTUDIO__HOST=host.docker.internal
+      - LMSTUDIO__PORT=1234
+      - LMSTUDIO__BASE_URL=http://host.docker.internal:1234/v1
+      - EMBEDDER__BASE_URL=http://host.docker.internal:1234/v1
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - elastic_rag_network
+    restart: unless-stopped
+
+volumes:
+  es_data:
+    driver: local
+
+networks:
+  elastic_rag_network:
+    driver: bridge

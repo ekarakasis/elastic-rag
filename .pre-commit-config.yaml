@@ -1,0 +1,72 @@
+# Pre-commit hooks for Elastic RAG
+#
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+#
+# These hooks run before each commit to ensure code quality
+
+repos:
+  # Code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        name: Format code with Black
+        language_version: python3.11
+
+  # Linting with Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        name: Lint with Ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # Import sorting
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: Sort imports with isort
+        args: ["--profile", "black"]
+
+  # Basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-toml
+        name: Check TOML syntax
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: ["--maxkb=1000"]
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: debug-statements
+        name: Check for debug statements
+
+  # Run unit tests (fast feedback loop)
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: Run unit tests
+        entry: uv run pytest tests/unit/ -v --tb=short
+        language: system
+        pass_filenames: false
+        always_run: false
+        stages: [pre-commit]
+        # Only run if Python files changed
+        files: \.(py)$
+
+# Configuration
+default_language_version:
+  python: python3.11
+# Hooks to skip (add ID here to disable)
+# exclude: ^(path/to/exclude|another/path)

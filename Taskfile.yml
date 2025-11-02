@@ -1,0 +1,337 @@
+version: "3"
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  help:
+    desc: Show detailed help for all tasks
+    silent: true
+    cmds:
+      - |
+        cat << 'EOF'
+
+        ╔════════════════════════════════════════════════════════════════════╗
+        ║           📚 Elastic RAG - Task Runner Help                        ║
+        ╚════════════════════════════════════════════════════════════════════╝
+
+        🏗️  BUILD & SETUP
+        ─────────────────────────────────────────────────────────────────────
+          task setup          Create .env file from example
+          task install        Install/update dependencies with uv
+          task update         Update all dependencies
+          task build          Build Docker images
+          task build:no-cache Build Docker images without cache (clean build)
+
+        🚀 SERVICES
+        ─────────────────────────────────────────────────────────────────────
+          task start          Start all services (Elasticsearch + App)
+          task stop           Stop all services
+          task restart        Restart all services
+          task dev            Start development server with hot reload
+          task ps             Show running services
+          task health         Check health of all services
+
+        📋 LOGS
+        ─────────────────────────────────────────────────────────────────────
+          task logs           View all service logs
+          task logs-app       View app service logs only
+          task logs-es        View Elasticsearch logs only
+
+        🧪 TESTING
+        ─────────────────────────────────────────────────────────────────────
+          task test           Run full test suite with coverage
+          task test-unit      Run unit tests only
+          task test-integration Run integration tests only
+          task test-e2e       Run end-to-end tests only
+
+        ✨ CODE QUALITY
+        ─────────────────────────────────────────────────────────────────────
+          task lint           Run linting checks (ruff + black)
+          task format         Auto-format code with black and ruff
+          task type-check     Run mypy type checking
+          task pre-commit     Run pre-commit hooks on all files
+          task pre-commit-install  Install pre-commit git hooks
+
+        🎬 DEMOS
+        ─────────────────────────────────────────────────────────────────────
+          task demo-phase3    Phase 3 demo (Document Processing)
+          task demo-phase4    Phase 4 demo (Elasticsearch Integration)
+          task demo-phase5    Phase 5 demo (RAG Agent with Google ADK)
+          task demo-phase6    Phase 6 demo (Resilience Layer)
+          task demo-phase7    Phase 7 demo (API Layer)
+          task demo-all       Run all demos sequentially
+
+        🔍 VERIFICATION & HEALTH (v1.0.1+)
+        ─────────────────────────────────────────────────────────────────────
+          task demo-verify    Upload verification demo (best practices)
+          task demo-health    System health check demo
+          task verify         Quick system health check
+
+        🖥️  WEB UI (Phase 10)
+        ─────────────────────────────────────────────────────────────────────
+          task ui:dev         Start Gradio UI in development mode
+          task ui:start       Start Gradio UI (production mode)
+
+        🧹 MAINTENANCE
+        ─────────────────────────────────────────────────────────────────────
+          task clean          Clean up Docker resources and Python cache
+          task shell          Open shell in app container
+
+        ─────────────────────────────────────────────────────────────────────
+        💡 TIP: Run 'task --list' for a quick list of all tasks
+
+        EOF
+
+  build:
+    desc: Build Docker images
+    cmds:
+      - docker compose -f docker/docker-compose.yml build
+      - echo "✅ Docker images built successfully"
+
+  build:no-cache:
+    desc: Build Docker images without cache (clean build)
+    cmds:
+      - docker compose -f docker/docker-compose.yml build --no-cache
+      - echo "✅ Docker images built successfully (no cache)"
+
+  start:
+    desc: Start all services (Elasticsearch + App)
+    cmds:
+      - docker compose -f docker/docker-compose.yml up -d
+      - echo "Services started successfully!"
+
+  stop:
+    desc: Stop all services
+    cmds:
+      - docker compose -f docker/docker-compose.yml down
+      - echo "🛑 Services stopped"
+
+  restart:
+    desc: Restart all services
+    cmds:
+      - task: stop
+      - task: start
+
+  dev:
+    desc: Start in development mode with hot reload (local, not Docker)
+    cmds:
+      - echo "🔧 Starting development server..."
+      - uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+  test:
+    desc: Run test suite
+    cmds:
+      - uv run pytest tests/ -v --cov=src --cov-report=term-missing
+      - echo "✅ Tests completed"
+
+  test-unit:
+    desc: Run unit tests only
+    cmds:
+      - uv run pytest tests/unit/ -v
+
+  test-integration:
+    desc: Run integration tests only
+    cmds:
+      - uv run pytest tests/integration/ -v
+
+  test-e2e:
+    desc: Run end-to-end tests only
+    cmds:
+      - uv run pytest tests/e2e/ -v
+
+  lint:
+    desc: Run linting checks
+    cmds:
+      - uv run ruff check src/ tests/
+      - uv run black --check src/ tests/
+      - echo "✅ Linting passed"
+
+  format:
+    desc: Format code with black and ruff
+    cmds:
+      - uv run ruff check --fix src/ tests/
+      - uv run black src/ tests/
+      - echo "✅ Code formatted"
+
+  type-check:
+    desc: Run type checking with mypy
+    cmds:
+      - uv run mypy src/
+      - echo "✅ Type checking passed"
+
+  pre-commit:
+    desc: Run pre-commit hooks on all files
+    cmds:
+      - uv run pre-commit run --all-files
+      - echo "✅ Pre-commit checks passed"
+
+  pre-commit-install:
+    desc: Install pre-commit git hooks
+    cmds:
+      - uv run pre-commit install
+      - echo "✅ Pre-commit hooks installed"
+
+  clean:
+    desc: Clean up Docker resources and Python cache
+    cmds:
+      - docker compose -f docker/docker-compose.yml down -v
+      - docker system prune -f
+      - find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type f -name "*.pyc" -delete 2>/dev/null || true
+      - rm -rf .pytest_cache .coverage htmlcov .mypy_cache
+      - echo "🧹 Cleaned up successfully"
+
+  logs:
+    desc: View service logs
+    cmds:
+      - docker compose -f docker/docker-compose.yml logs -f
+
+  logs-app:
+    desc: View app service logs only
+    cmds:
+      - docker compose -f docker/docker-compose.yml logs -f app
+
+  logs-es:
+    desc: View Elasticsearch logs only
+    cmds:
+      - docker compose -f docker/docker-compose.yml logs -f elasticsearch
+
+  ps:
+    desc: Show running services
+    cmds:
+      - docker compose -f docker/docker-compose.yml ps
+
+  shell:
+    desc: Open shell in app container
+    cmds:
+      - docker compose -f docker/docker-compose.yml exec app /bin/bash
+
+  health:
+    desc: Check health of all services
+    cmds:
+      - echo "🔍 Checking service health..."
+      - echo "\n📍 App Health:"
+      - curl -s http://localhost:8000/health | python -m json.tool || echo "❌ App not responding"
+      - echo "\n📍 Elasticsearch Health:"
+      - curl -s http://localhost:9200/_cluster/health | python -m json.tool || echo "❌ Elasticsearch not responding"
+
+  setup:
+    desc: Initial setup - create .env from example
+    cmds:
+      - |
+        if [ ! -f .env ]; then
+          cp .env.example .env
+          echo "✅ Created .env file from .env.example"
+          echo "⚠️  Please review and update .env with your configuration"
+        else
+          echo "ℹ️  .env file already exists"
+        fi
+
+  install:
+    desc: Install/update dependencies
+    cmds:
+      - uv sync
+      - echo "✅ Dependencies installed"
+
+  update:
+    desc: Update dependencies
+    cmds:
+      - uv sync --upgrade
+      - echo "✅ Dependencies updated"
+
+  demo-phase3:
+    desc: Run Phase 3 demo (Document Processing Pipeline)
+    cmds:
+      - echo "🎬 Running Phase 3 Demo..."
+      - uv run python demos/demo_phase3.py
+
+  demo-phase4:
+    desc: Run Phase 4 demo (Elasticsearch Integration)
+    cmds:
+      - echo "🎬 Running Phase 4 Demo..."
+      - uv run python demos/demo_phase4.py
+
+  demo-phase5:
+    desc: Run Phase 5 demo (RAG Agent with Google ADK)
+    cmds:
+      - echo "🎬 Running Phase 5 Demo..."
+      - uv run python demos/demo_phase5.py
+
+  demo-phase6:
+    desc: Run Phase 6 demo (Resilience Layer)
+    cmds:
+      - echo "🎬 Running Phase 6 Demo..."
+      - echo "ℹ️  Demo adapts based on available services (ES, LMStudio)"
+      - uv run python demos/demo_phase6.py
+
+  demo-phase7:
+    desc: Run Phase 7 demo (API Layer)
+    cmds:
+      - echo "🎬 Running Phase 7 Demo..."
+      - echo "ℹ️  Make sure services are running (task start)"
+      - uv run python demos/demo_phase7.py
+
+  demo-all:
+    desc: Run all demo scripts sequentially
+    cmds:
+      - echo "🎬 Running all demos..."
+      - echo ""
+      - task: demo-phase3
+      - echo ""
+      - echo "⏳ Waiting 2 seconds before next demo..."
+      - sleep 2
+      - task: demo-phase4
+      - echo ""
+      - echo "⏳ Waiting 2 seconds before next demo..."
+      - sleep 2
+      - task: demo-phase5
+      - echo ""
+      - echo "⏳ Waiting 2 seconds before next demo..."
+      - sleep 2
+      - task: demo-phase6
+      - echo ""
+      - echo "⏳ Waiting 2 seconds before next demo..."
+      - sleep 2
+      - task: demo-phase7
+      - echo ""
+      - echo "✅ All demos completed!"
+
+  demo-verify:
+    desc: Run upload verification demo (v1.0.1+)
+    cmds:
+      - echo "🔍 Running Upload Verification Demo..."
+      - echo "ℹ️  Demonstrates proper upload → verify → query workflow"
+      - echo "ℹ️  Make sure services are running (task start)"
+      - uv run python demos/demo_upload_verification.py
+
+  demo-health:
+    desc: Run system health check demo
+    cmds:
+      - echo "🏥 Running System Health Check Demo..."
+      - echo "ℹ️  Comprehensive health check for all components"
+      - uv run python demos/demo_system_health.py
+
+  verify:
+    desc: Quick system health check (alias for demo-health)
+    cmds:
+      - task: demo-health
+
+  ui:dev:
+    desc: Start Gradio UI in development mode
+    cmds:
+      - echo "🖥️  Starting Gradio UI..."
+      - echo "ℹ️  UI will be available at http://localhost:7860"
+      - echo "ℹ️  API backend should be running at http://localhost:8000"
+      - uv run python demos/launch_ui.py
+
+  ui:start:
+    desc: Start Gradio UI (production mode)
+    cmds:
+      - echo "🖥️  Starting Gradio UI in production mode..."
+      - echo "ℹ️  UI will be available at http://0.0.0.0:7860"
+      - echo "ℹ️  API backend should be running at http://localhost:8000"
+      - uv run python demos/launch_ui.py --host 0.0.0.0 --share false
