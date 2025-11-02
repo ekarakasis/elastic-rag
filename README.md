@@ -1,19 +1,21 @@
 # Elastic RAG
 
-**Elastic RAG** is a production-ready, containerized Retrieval-Augmented Generation (RAG) system that combines the power of Elasticsearch for efficient document retrieval with a stateless agentic framework built on Google ADK. It's designed for developers who need a robust, scalable, and private RAG solution that can be deployed anywhere.
+**Elastic RAG** is a containerized Retrieval-Augmented Generation (RAG) system that combines the power of Elasticsearch for efficient document retrieval with a stateless agentic framework built on Google ADK. It's designed for developers who need a robust, scalable, and private RAG solution that can be deployed anywhere.
 
 ## 🚀 Features
 
-- [x] **Stateless Agent Architecture**: No conversation memory for easy scaling and predictable behavior.
-- [x] **Local-First LLM Support**: Keep your data private with local LLM inference via LMStudio.
-- [x] **Hybrid Search**: Combines vector similarity and BM25 keyword search for optimal retrieval.
-- [x] **Multi-Format Document Processing**: Ingests PDF, DOCX, PPTX, HTML, and TXT files using Docling.
-- [x] **Resilient by Design**: Features a circuit breaker to protect against LLM service failures.
-- [x] **Health Monitoring**: Kubernetes-style health probes (`/health/live`, `/health/ready`, `/health/startup`).
-- [x] **Type-Safe Configuration**: Pydantic settings ensure your configuration is valid at startup.
-- [x] **Secure by Default**: Automatic masking of secrets in logs.
-- [x] **Containerized**: Ships as a Docker container for easy deployment.
-- [x] **Async Processing**: Supports asynchronous document uploads for large files.
+- **Stateless Agent Architecture**: No conversation memory for easy scaling and predictable behavior
+- **Local-First LLM Support**: Keep your data private with local LLM inference via LMStudio
+- **Hybrid Search**: Combines vector similarity and BM25 keyword search for optimal retrieval
+- **Multi-Format Document Processing**: Ingests PDF, DOCX, PPTX, HTML, and TXT files using Docling (only pdf files have been tested)
+- **Resilient by Design**: Circuit breaker protects against LLM service failures
+- **Health Monitoring**: Kubernetes-style health probes (`/health/live`, `/health/ready`, `/health/startup`)
+- **Web UI**: Gradio-based development interface for testing and demos
+- **Type-Safe Configuration**: Pydantic settings ensure valid configuration at startup
+- **Secure by Default**: Automatic masking of secrets in logs
+- **Containerized**: Ships as Docker container for easy deployment
+- **Async Processing**: Supports asynchronous document uploads for large files
+- **Production-Ready**: 319 tests with 85% core coverage, comprehensive error handling
 
 ## 🛠️ Core Technologies
 
@@ -72,15 +74,17 @@ The system exposes a RESTful API for all interactions.
 
 ### Key Endpoints
 
-- `POST /documents/upload`: Upload a single document for processing.
-- `POST /documents/upload/batch`: Upload multiple documents at once.
-- `POST /query/`: Ask a question to the RAG agent (stateless).
-- `GET /documents/`: List all indexed documents.
-- `GET /health/ready`: Check if the system is ready to accept traffic.
+- `POST /documents/upload` - Upload a single document
+- `POST /documents/upload/async` - Upload with background processing
+- `POST /documents/upload/batch` - Upload multiple documents
+- `POST /query/` - Ask questions to the RAG agent (stateless)
+- `GET /documents/` - List all indexed documents
+- `DELETE /documents/{document_id}` - Delete a document and its chunks
+- `GET /health/ready` - Check system readiness
 
-All endpoints are fully documented with OpenAPI (Swagger) at the `/docs` endpoint.
+**Interactive Documentation**: Visit `http://localhost:8000/docs` for full OpenAPI (Swagger) documentation.
 
-For detailed information on every endpoint, request/response models, and error codes, please refer to the [API Reference](./docs/API.md).
+For detailed API reference, see [API.md](./docs/API.md).
 
 ## ✨ Important Techniques Explained
 
@@ -112,14 +116,14 @@ Follow these steps to get the Elastic RAG system up and running in minutes.
 
 ### Prerequisites
 
-- [ ] **Docker**: Ensure Docker is installed and running.
-- [ ] **Python 3.11+**: Required for running local scripts.
-- [ ] **UV**: Install with `pip install uv`.
-- [ ] **Taskfile**: Installation instructions at [taskfile.dev](https://taskfile.dev/installation/).
-- [ ] **LMStudio**: Download and run from [lmstudio.ai](https://lmstudio.ai/).
-  - [ ] Download an embedding model (e.g., `nomic-embed-text`).
-  - [ ] Download a chat model (e.g., `Meta-Llama-3.1-8B-Instruct`).
-  - [ ] Start the local server in LMStudio.
+- **Docker**: Ensure Docker is installed and running
+- **Python 3.11+**: Required for running local scripts
+- **UV**: Install with `pip install uv`
+- **Taskfile**: Installation instructions at [taskfile.dev](https://taskfile.dev/installation/)
+- **LMStudio**: Download and run from [lmstudio.ai](https://lmstudio.ai/)
+  - Download an embedding model (e.g., `openai/text-embedding-bge-m3` or `nomic-embed-text`)
+  - Download a chat model (e.g., `openai/qwen3-30b-a3b-mlx` or `llama-3.2-3b-instruct`)
+  - Start the local server in LMStudio (default: `http://localhost:1234`)
 
 ### Installation
 
@@ -150,13 +154,17 @@ Follow these steps to get the Elastic RAG system up and running in minutes.
 
 ### Verification
 
-- **API**: Navigate to `http://localhost:8000/docs` to see the interactive API documentation.
-- **Elasticsearch**: Check if Elasticsearch is running at `http://localhost:9200`.
-- **Health**: Run the health check to verify all components are operational.
+Verify all services are running:
 
-  ```bash
-  task health
-  ```
+```bash
+task health
+```
+
+Access the interfaces:
+
+- **API Documentation**: `http://localhost:8000/docs`
+- **Gradio UI**: `task ui:dev` then visit `http://localhost:7860`
+- **Elasticsearch**: `http://localhost:9200`
 
 ## 🚀 Usage Examples
 
@@ -186,81 +194,81 @@ For more advanced usage, you can use the `curl_examples.sh` script to see how to
 ./examples/curl_examples.sh
 ```
 
-## ⚙️ Taskfile Commands
+## ⚙️ Common Commands
 
-This project uses `Taskfile` to automate common development tasks. Here are some of the most useful commands:
+**Service Management**:
 
-- `task setup`: Create `.env` file from `.env.example`.
-- `task install`: Install/update dependencies with `uv`.
-- `task start`: Start all services (Elasticsearch + App) in the background.
-- `task stop`: Stop all running services.
-- `task restart`: Restart all services.
-- `task dev`: Start the application in development mode with hot-reloading.
-- `task test`: Run the entire test suite with coverage report.
-- `task test-unit`: Run only the unit tests.
-- `task test-integration`: Run only the integration tests.
-- `task test-e2e`: Run only the end-to-end tests.
-- `task lint`: Run linting checks with `ruff` and `black`.
-- `task format`: Auto-format code with `black` and `ruff`.
-- `task type-check`: Run `mypy` type checking.
-- `task logs`: Tail the logs of all running services.
-- `task logs-app`: Tail the logs of the application service.
-- `task logs-es`: Tail the logs of the Elasticsearch service.
-- `task ps`: Show running services.
-- `task shell`: Open a shell in the application container.
-- `task clean`: Stop and remove all containers, volumes, and Python cache.
-- `task health`: Check the health of all services.
+- `task start` - Start all services (Elasticsearch + App)
+- `task stop` - Stop all services
+- `task dev` - Start with hot-reloading
+- `task ui:dev` - Start Gradio web UI (development mode)
+- `task health` - Check system health
 
-To see a full list of available commands, run `task --list` or `task help` for a more detailed overview.
+**Development**:
 
-## 🔬 Demos
+- `task test` - Run all tests with coverage (319 tests)
+- `task lint` - Check code style
+- `task format` - Auto-format code
+- `task logs` - View service logs
 
-This project includes a series of demos that showcase the functionality of each component in isolation. You can find them in the `demos/` directory.
+**Full Command List**: Run `task --list` to see all available commands.
 
-- `task demo-phase3`: Demonstrates the document processing pipeline.
-- `task demo-phase4`: Demonstrates the Elasticsearch integration.
-- `task demo-phase5`: Demonstrates the RAG agent and LLM integration.
-- `task demo-phase6`: Demonstrates the resilience layer, including the circuit breaker and health probes.
-- `task demo-phase7`: Demonstrates the full API functionality.
-- `task demo-all`: Run all demos sequentially.
-- `task demo-verify`: A script to verify that a document has been successfully uploaded and indexed.
-- `task demo-health`: A script to check the health of all system components.
-- `task verify`: A quick system health check (alias for `demo-health`).
+## 🎯 Web UI
 
-To run a demo, use the corresponding `task` command.
+A Gradio-based web interface is available for easy testing and demonstrations:
+
+```bash
+task ui:dev    # Start UI in development mode (localhost:7860)
+task ui:start  # Start UI in production mode (0.0.0.0:7860)
+```
+
+**Features**:
+
+- Document upload with drag & drop
+- Document library with pagination
+- Interactive chat with RAG agent
+- Source citation display
+- System health monitoring
+
+See [UI_GUIDE.md](./docs/UI_GUIDE.md) for detailed usage instructions.
+
+**Note**: The Gradio UI is a development/demo tool. Production deployments should use the FastAPI backend API directly.
 
 ## 🧪 Testing
 
-The project has a comprehensive test suite with unit, integration, and end-to-end tests.
+**Test Coverage**: 319 tests with 85% core coverage
 
-- **Run all tests**:
+```bash
+task test              # Run all tests with coverage
+task test-unit         # Unit tests only
+task test-integration  # Integration tests only
+```
 
-  ```bash
-  task test
-  ```
+**Code Quality**:
 
-- **Run unit tests only**:
-
-  ```bash
-  task test-unit
-  ```
-
-- **Run integration tests**:
-
-  ```bash
-  task test-integration
-  ```
-
-For more details on the testing philosophy and how to write effective tests, see the [Testing Guide](./docs/TESTING_GUIDE.md).
+```bash
+task lint    # Check code style (ruff + black)
+task format  # Auto-format code
+```
 
 ## 📚 Documentation
 
-This project is extensively documented to help you understand its architecture, configuration, and usage.
+**Core Documentation**:
 
-- **[GEMINI.md](./GEMINI.md)**: A high-level overview of the project, its features, and technologies.
-- **[API Reference](./docs/API.md)**: Detailed documentation for all REST API endpoints.
-- **[Architecture Deep Dive](./docs/ARCHITECTURE.md)**: An in-depth look at the system's architecture and data flows.
-- **[Configuration Guide](./docs/CONFIGURATION.md)**: A complete reference for all environment variables and settings.
+- **[API.md](./docs/API.md)** - Complete REST API reference
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture and data flows
+- **[CONFIGURATION.md](./docs/CONFIGURATION.md)** - Configuration and environment variables
+- **[UI_GUIDE.md](./docs/UI_GUIDE.md)** - Gradio web interface usage guide
+
+**Development**:
+
+- **[GEMINI.md](./GEMINI.md)** - Technical deep dive for developers
+- **[AGENTS.md](./AGENTS.md)** - Guide for AI coding agents
+
+**Reports** (Recent):
+
+- `Prompts/reports/2025-11-02_code_quality_review.md` - Production readiness assessment (Grade: A-)
+- `Prompts/reports/2025-11-02_memory_leakage_analysis.md` - Memory management analysis (Grade: B+)
 
 ## 🤝 Contributing
 
