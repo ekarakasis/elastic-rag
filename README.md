@@ -262,7 +262,6 @@ task format  # Auto-format code
 
 **Development**:
 
-- **[GEMINI.md](./GEMINI.md)** - Technical deep dive for developers
 - **[AGENTS.md](./AGENTS.md)** - Guide for AI coding agents
 
 **Reports** (Recent):
